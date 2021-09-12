@@ -11,7 +11,12 @@ from dto import *
 
 
 app = Flask(__name__, template_folder='swagger/templates')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+
+
+db_url = os.getenv('DATABASE_URL')
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 s3 = boto3.client('s3', aws_access_key_id=os.getenv('S3_KEY'),
