@@ -39,7 +39,7 @@
     window.onload = function() {
       // Begin Swagger UI call region
       const ui = SwaggerUIBundle({
-        url: "https://grab-discover.herokuapp.com/api/swagger.json",
+        url: "{{domain}}/api/swagger.json",
         dom_id: '#swagger-ui',
         deepLinking: true,
         presets: [
