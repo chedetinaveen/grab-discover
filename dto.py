@@ -38,3 +38,6 @@ class GetPostResponseSchema(Schema):
 
 class ListPostResponsesSchema(Schema):
     posts = fields.List(fields.Nested(GetPostResponseSchema))
+
+class UploadMediaResponseSchema(Schema):
+    id = fields.Int()

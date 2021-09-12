@@ -28,6 +28,36 @@ db_init(app)
 
 @app.route('/merchant/upload', methods=['POST'])
 def media_upload():
+    """ Upload Media
+        ---
+        post:
+            summary: upload images or video
+            description: Upload Media
+            tags:
+                - Media
+            requestBody:
+                content:
+                    multipart/form-data:
+                        schema:
+                            type: object
+                            properties:
+                                file:
+                                    type: string
+                                    format: binary
+                                    required: true
+
+            responses:
+                200:
+                    description: media id of the upload
+                    content:
+                        application/json:
+                            schema: UploadMediaResponseSchema
+
+                400:
+                    description: invalid request
+    """
+    if not ('file' in request.files):
+        return 'file not uploaded', 400
     pic = request.files['file']
     if not pic:
         return 'file not uploaded', 400
@@ -331,6 +361,7 @@ with app.test_request_context():
     spec.path(view=create_post)
     spec.path(view=get_merchant_post)
     spec.path(view=list_merchant_posts)
+    spec.path(view=media_upload)
 
 
 if __name__ == '__main__':
