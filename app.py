@@ -51,6 +51,7 @@ spec = APISpec(
 )
 
 
+@app.route("/")
 @app.route('/docs')
 @app.route('/docs/<path:path>')
 def swagger_docs(path=None):
@@ -63,11 +64,6 @@ def swagger_docs(path=None):
 @app.route('/api/swagger.json')
 def create_swagger_spec():
     return jsonify(spec.to_dict())
-
-
-@app.route('/')
-def index():
-    return render_template('index.html')
 
 
 @app.route('/merchant', methods=['POST'])
