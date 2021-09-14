@@ -313,7 +313,10 @@ def get_merchant_post(id, post_id):
     """
     post = Post.query.get(post_id)
     media = Media.query.get_or_404(post.media_id)
-    return {'id': post.id, 'title': post.title, 'media_url': media.get_url(os.getenv('S3_BUCKET'), os.getenv('S3_REGION')), 'date_posted': post.date_posted.isoformat()}, 200
+    merchant = Merchant.query.get_or_404(post.user_id)
+    logo = Media.query.get_or_404(merchant.logo_id)
+    return {'id': post.id, 'title': post.title, 'media_url': media.get_url(os.getenv('S3_BUCKET'), os.getenv('S3_REGION')), 'date_posted': post.date_posted.isoformat(), 'merchant_name': merchant.name, 'logo_url': logo.get_url(os.getenv(
+        'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype}, 200
 
 
 @app.route('/merchant/<int:id>/posts', methods=['GET'])
@@ -345,11 +348,13 @@ def list_merchant_posts(id):
     """
     merchant = Merchant.query.get_or_404(id)
     posts = Post.query.filter_by(user_id=merchant.id).all()
+    logo = Media.query.get_or_404(merchant.logo_id)
     response = []
     for post in posts:
         media = Media.query.get_or_404(post.media_id)
         response.append({'id': post.id, 'title': post.title, 'media_url': media.get_url(os.getenv(
-            'S3_BUCKET'), os.getenv('S3_REGION')), 'date_posted': post.date_posted.isoformat()})
+            'S3_BUCKET'), os.getenv('S3_REGION')), 'date_posted': post.date_posted.isoformat(), 'merchant_name': merchant.name, 'logo_url': logo.get_url(os.getenv(
+                'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype})
     return {'posts': response}, 200
 
 

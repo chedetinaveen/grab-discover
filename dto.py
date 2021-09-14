@@ -32,12 +32,17 @@ class CreatePostResponseSchema(Schema):
 class GetPostResponseSchema(Schema):
     id = fields.Int()
     media_url = fields.Str()
+    media_mimetype = fields.Str()
     title = fields.Str()
     date_posted = fields.Str()
+    logo_url = fields.Str()
+    logo_mimetype = fields.Str()
+    merchant_name = fields.Str()
 
 
 class ListPostResponsesSchema(Schema):
     posts = fields.List(fields.Nested(GetPostResponseSchema))
+
 
 class UploadMediaResponseSchema(Schema):
     id = fields.Int()
