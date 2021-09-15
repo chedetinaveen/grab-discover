@@ -5,7 +5,7 @@ from apispec.ext.marshmallow import MarshmallowPlugin
 import os
 from db import db_init, db
 from werkzeug.utils import secure_filename
-from models import Merchant, Media, Post
+from models import Merchant, Media, Post, User
 import boto3
 from dto import *
 import uuid
@@ -395,6 +395,78 @@ def get_discover():
     return {'posts': response}, 200
 
 
+@app.route('/user', methods=['POST'])
+def create_user():
+    """ Create User
+        ---
+        post:
+            summary: create user
+            description: Create user
+            tags:
+                - User
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: CreateUserSchema
+
+
+            responses:
+                200:
+                    description: user created
+                    content:
+                        application/json:
+                            schema: CreateUserResponseSchema
+
+                400:
+                    description: invalid request
+    """
+    if not request.is_json:
+        return 'Invalid Request', 400
+    req = request.get_json()
+    user = User(name=req['name'], media_id=req['profile_id'])
+    db.session.add(user)
+    db.session.commit()
+    return {'id': user.id}, 200
+
+
+@app.route('/user/<int:id>', methods=['PUT'])
+def update_user(id):
+    """ Update User
+        ---
+        put:
+            summary: update user details
+            description: Update user by id
+            tags:
+                - User
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: integer
+                  description: user id
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: UpdateUserSchema
+
+            responses:
+                204:
+                    description: user details updated
+
+                404:
+                    description: user not found
+    """
+    user = User.query.get_or_404(id)
+    req = request.get_json()
+    user.name = req['name']
+    user.media_id = req['profile_id']
+    db.session.commit()
+    return '', 204
+
+
 with app.test_request_context():
     spec.path(view=create_merchant)
     spec.path(view=get_merchant)
@@ -405,6 +477,8 @@ with app.test_request_context():
     spec.path(view=list_merchant_posts)
     spec.path(view=media_upload)
     spec.path(view=get_discover)
+    spec.path(view=create_user)
+    spec.path(view=update_user)
 
 
 if __name__ == '__main__':

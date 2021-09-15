@@ -42,3 +42,9 @@ class Post(db.Model):
         return f"Post('{self.id}', '{self.media}',  '{self.date_posted}')"
         return f"Post('{self.id}', '{self.media}',  '{self.date_posted}')"
         return f"Post('{self.id}', '{self.media}',  '{self.date_posted}')"
+
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    media_id = db.Column(db.Integer, db.ForeignKey('media.id'), nullable=False)
+    name = db.Column(db.Text, nullable=False)

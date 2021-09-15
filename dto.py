@@ -62,3 +62,17 @@ class GetDiscoverResponseSchema(Schema):
 
 class ListDiscoverResponseSchema(Schema):
     posts = fields.List(fields.Nested(GetDiscoverResponseSchema))
+
+
+class CreateUserSchema(Schema):
+    profile_id = fields.Int()
+    name = fields.Str()
+
+
+class CreateUserResponseSchema(Schema):
+    id = fields.Int()
+
+
+class UpdateUserSchema(Schema):
+    name = fields.Str()
+    profile_id = fields.Str()
