@@ -46,3 +46,19 @@ class ListPostResponsesSchema(Schema):
 
 class UploadMediaResponseSchema(Schema):
     id = fields.Int()
+
+
+class GetDiscoverResponseSchema(Schema):
+    id = fields.Int()
+    merchant_name = fields.Str()
+    logo_url = fields.Str()
+    logo_mimetype = fields.Str()
+    title = fields.Str()
+    media_url = fields.Str()
+    media_mimetype = fields.Str()
+    likes = fields.Int()
+    orders = fields.Int()
+
+
+class ListDiscoverResponseSchema(Schema):
+    posts = fields.List(fields.Nested(GetDiscoverResponseSchema))

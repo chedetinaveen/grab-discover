@@ -9,6 +9,7 @@ from models import Merchant, Media, Post
 import boto3
 from dto import *
 import uuid
+import datetime
 
 
 app = Flask(__name__, template_folder='swagger/templates')
@@ -348,10 +349,46 @@ def list_merchant_posts(id):
     """
     merchant = Merchant.query.get_or_404(id)
     posts = Post.query.filter_by(user_id=merchant.id).all()
+    posts.sort(key=lambda x: (x.date_posted
+               - datetime.datetime(1970, 1, 1)).total_seconds(), reverse=True)
     logo = Media.query.get_or_404(merchant.logo_id)
     response = []
     for post in posts:
         media = Media.query.get_or_404(post.media_id)
+        response.append({'id': post.id, 'title': post.title, 'media_url': media.get_url(os.getenv(
+            'S3_BUCKET'), os.getenv('S3_REGION')), 'date_posted': post.date_posted.isoformat(), 'merchant_name': merchant.name, 'logo_url': logo.get_url(os.getenv(
+                'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype})
+    return {'posts': response}, 200
+
+
+@app.route('/discover', methods=['GET'])
+def get_discover():
+    """ Discover the feed
+        ---
+        get:
+            summary: list all posts in discover
+            description: list all posts
+            tags:
+                - Discover
+
+            responses:
+                200:
+                    description: post details
+                    content:
+                        application/json:
+                            schema: ListDiscoverResponseSchema
+
+                404:
+                    description: post not found
+    """
+    posts = Post.query.all()
+    posts.sort(key=lambda x: (x.date_posted
+               - datetime.datetime(1970, 1, 1)).total_seconds(), reverse=True)
+    response = []
+    for post in posts:
+        media = Media.query.get_or_404(post.media_id)
+        merchant = Merchant.query.get_or_404(post.user_id)
+        logo = Media.query.get_or_404(merchant.logo_id)
         response.append({'id': post.id, 'title': post.title, 'media_url': media.get_url(os.getenv(
             'S3_BUCKET'), os.getenv('S3_REGION')), 'date_posted': post.date_posted.isoformat(), 'merchant_name': merchant.name, 'logo_url': logo.get_url(os.getenv(
                 'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype})
@@ -367,6 +404,7 @@ with app.test_request_context():
     spec.path(view=get_merchant_post)
     spec.path(view=list_merchant_posts)
     spec.path(view=media_upload)
+    spec.path(view=get_discover)
 
 
 if __name__ == '__main__':
