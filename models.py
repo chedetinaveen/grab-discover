@@ -48,3 +48,17 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     media_id = db.Column(db.Integer, db.ForeignKey('media.id'), nullable=False)
     name = db.Column(db.Text, nullable=False)
+
+
+class Like(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+
+
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    date_posted = db.Column(db.DateTime, nullable=False,
+                            default=datetime.utcnow)

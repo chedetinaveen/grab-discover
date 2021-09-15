@@ -29,6 +29,11 @@ class CreatePostResponseSchema(Schema):
     id = fields.Int()
 
 
+class UpdatePostRequestSchema(Schema):
+    title = fields.Str()
+    media_id = fields.Int()
+
+
 class GetPostResponseSchema(Schema):
     id = fields.Int()
     media_url = fields.Str()

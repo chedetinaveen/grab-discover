@@ -279,6 +279,90 @@ def create_post(id):
     return {'id': post.id}, 200
 
 
+@app.route('/merchant/<int:id>/post/<int:post_id>', methods=['PUT'])
+def update_post(id, post_id):
+    """ Update Post
+        ---
+        put:
+            summary: update post by merchant
+            description: Update post
+            tags:
+                - Post
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: integer
+                  description: merchant id
+                - in: path
+                  name: post_id
+                  required: true
+                  schema:
+                    type: integer
+                  description: id of the post
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: UpdatePostRequestSchema
+
+
+            responses:
+                204:
+                    description: post updated
+
+                400:
+                    description: bad request
+    """
+    if not request.is_json:
+        return 'Invalid Request', 400
+    Merchant.query.get_or_404(id)
+    post = Post.query.get_or_404(post_id)
+    req = request.get_json()
+    post.title = req['title']
+    post.media_id = req['media_id']
+    db.session.commit()
+    return '', 204
+
+
+@app.route('/merchant/<int:id>/post/<int:post_id>', methods=['DELETE'])
+def delete_post(id, post_id):
+    """ Delete Post
+        ---
+        delete:
+            summary: delete post by merchant
+            description: Delete post
+            tags:
+                - Post
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: integer
+                  description: merchant id
+                - in: path
+                  name: post_id
+                  required: true
+                  schema:
+                    type: integer
+                  description: id of the post
+
+            responses:
+                204:
+                    description: post deleted
+
+                404:
+                    description: post not found
+    """
+    Merchant.query.get_or_404(id)
+    post = Post.query.get_or_404(post_id)
+    db.session.delete(post)
+    db.session.commit()
+    return '', 204
+
+
 @app.route('/merchant/<int:id>/post/<int:post_id>', methods=['GET'])
 def get_merchant_post(id, post_id):
     """ Get Post Details
@@ -467,12 +551,19 @@ def update_user(id):
     return '', 204
 
 
+@app.route('/user/<int:id>/post/<int:post_id>', methods=['POST'])
+def like(id, post_id):
+    return '', 204
+
+
 with app.test_request_context():
     spec.path(view=create_merchant)
     spec.path(view=get_merchant)
     spec.path(view=update_merchant)
     spec.path(view=delete_merchant)
     spec.path(view=create_post)
+    spec.path(view=update_post)
+    spec.path(view=delete_post)
     spec.path(view=get_merchant_post)
     spec.path(view=list_merchant_posts)
     spec.path(view=media_upload)
