@@ -27,7 +27,7 @@ s3 = boto3.client('s3', aws_access_key_id=os.getenv('S3_KEY'),
 db_init(app)
 
 
-@app.route('/merchant/upload', methods=['POST'])
+@app.route('/media/upload', methods=['POST'])
 def media_upload():
     """ Upload Media
         ---
@@ -69,7 +69,7 @@ def media_upload():
     media = Media(uuid=unique_path, name=filename, mimetype=pic.mimetype)
     db.session.add(media)
     db.session.commit()
-    return {'id': media.id}, 200
+    return {'id': media.id, 'media_url': media.get_url(os.getenv('S3_BUCKET'), os.getenv('S3_REGION'))}, 200
 
 
 spec = APISpec(
@@ -273,7 +273,7 @@ def create_post(id):
     merchant = Merchant.query.get_or_404(id)
     req = request.get_json()
     post = Post(title=req['title'], media_id=req['media_id'],
-                user_id=merchant.id)
+                user_id=merchant.id, items=req['items'])
     db.session.add(post)
     db.session.commit()
     return {'id': post.id}, 200
@@ -322,6 +322,7 @@ def update_post(id, post_id):
     req = request.get_json()
     post.title = req['title']
     post.media_id = req['media_id']
+    post.items = req['items']
     db.session.commit()
     return '', 204
 
@@ -363,6 +364,20 @@ def delete_post(id, post_id):
     return '', 204
 
 
+def get_items(items):
+    if items is None:
+        return []
+    itemDetails = []
+    for i in items:
+        item = Item.query.get(i)
+        if not item:
+            continue
+        media_item = Media.query.get_or_404(item.media_id)
+        itemDetails.append({'id': item.id, 'name': item.name, 'media_mimetype': media_item.mimetype, 'media_url': media_item.get_url(os.getenv(
+            'S3_BUCKET'), os.getenv('S3_REGION')), 'price': item.price, 'currency': item.currency, 'description': item.description, 'price': item.price, 'currency': item.currency})
+    return itemDetails
+
+
 @app.route('/merchant/<int:id>/post/<int:post_id>', methods=['GET'])
 def get_merchant_post(id, post_id):
     """ Get Post Details
@@ -400,8 +415,9 @@ def get_merchant_post(id, post_id):
     media = Media.query.get_or_404(post.media_id)
     merchant = Merchant.query.get_or_404(post.user_id)
     logo = Media.query.get_or_404(merchant.logo_id)
+    items = get_items(post.items)
     return {'id': post.id, 'title': post.title, 'media_url': media.get_url(os.getenv('S3_BUCKET'), os.getenv('S3_REGION')), 'date_posted': post.date_posted.isoformat(), 'merchant_name': merchant.name, 'logo_url': logo.get_url(os.getenv(
-        'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype}, 200
+        'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype, 'items': items}, 200
 
 
 @app.route('/merchant/<int:id>/posts', methods=['GET'])
@@ -439,7 +455,8 @@ def list_merchant_posts(id):
     response = []
     for post in posts:
         media = Media.query.get_or_404(post.media_id)
-        response.append({'id': post.id, 'title': post.title, 'media_url': media.get_url(os.getenv(
+
+        response.append({'items': get_items(post.items), 'id': post.id, 'title': post.title, 'media_url': media.get_url(os.getenv(
             'S3_BUCKET'), os.getenv('S3_REGION')), 'date_posted': post.date_posted.isoformat(), 'merchant_name': merchant.name, 'logo_url': logo.get_url(os.getenv(
                 'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype})
     return {'posts': response}, 200
@@ -473,7 +490,8 @@ def get_discover():
         media = Media.query.get_or_404(post.media_id)
         merchant = Merchant.query.get_or_404(post.user_id)
         logo = Media.query.get_or_404(merchant.logo_id)
-        response.append({'id': post.id, 'title': post.title, 'media_url': media.get_url(os.getenv(
+
+        response.append({'items': get_items(post.items), 'id': post.id, 'title': post.title, 'media_url': media.get_url(os.getenv(
             'S3_BUCKET'), os.getenv('S3_REGION')), 'date_posted': post.date_posted.isoformat(), 'merchant_name': merchant.name, 'logo_url': logo.get_url(os.getenv(
                 'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype, 'merchant_id': merchant.id})
     return {'posts': response}, 200
@@ -589,7 +607,7 @@ def create_item(id):
     req = request.get_json()
     Merchant.query.get_or_404(id)
     item = Item(name=req['name'], media_id=req['media_id'],
-                merchant_id=id, price=req['price'], currency=req['currency'])
+                merchant_id=id, price=req['price'], currency=req['currency'], description=req['description'])
     db.session.add(item)
     db.session.commit()
     return {'id': item.id}, 200
@@ -643,6 +661,7 @@ def update_item(id, item_id):
     item.media_id = req['media_id']
     item.price = req['price']
     item.currency = req['currency']
+    item.description = req['description']
     db.session.commit()
     return '', 204
 
@@ -683,7 +702,7 @@ def get_item(id, item_id):
     Merchant.query.get_or_404(id)
     item = Item.query.get_or_404(item_id)
     media = Media.query.get_or_404(item.media_id)
-    return {'id': item.id, 'name': item.name, 'media_mimetype': media.mimetype, 'media_url': media.get_url(os.getenv('S3_BUCKET'), os.getenv('S3_REGION')), 'price': item.price, 'currency': item.currency}, 200
+    return {'id': item.id, 'name': item.name, 'media_mimetype': media.mimetype, 'media_url': media.get_url(os.getenv('S3_BUCKET'), os.getenv('S3_REGION')), 'price': item.price, 'currency': item.currency, 'description': item.description}, 200
 
 
 @app.route('/merchant/<int:id>/menu', methods=['GET'])
@@ -720,16 +739,17 @@ def get_menu(id):
     for item in items:
         media = Media.query.get_or_404(item.media_id)
         response.append({'id': item.id, 'name': item.name, 'media_mimetype': media.mimetype,
-                        'media_url': media.get_url(os.getenv('S3_BUCKET'), os.getenv('S3_REGION')), 'price': item.price, 'currency': item.currency})
+                        'media_url': media.get_url(os.getenv('S3_BUCKET'), os.getenv('S3_REGION')), 'price': item.price, 'currency': item.currency, 'description': item.description})
     return {'items': response}, 200
 
 
-# @app.route('/boost', methods=['POST'])
+# @app.route('/post/<int:id>/boost', methods=['POST'])
 # def boost():
 #     if not request.is_json:
 #         return 'invalid request', 400
 #     req = request.get_json()
-#
+#     days = req['days']
+
 
 @app.route('/user/<int:id>/post/<int:post_id>', methods=['POST'])
 def like(id, post_id):

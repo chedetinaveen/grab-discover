@@ -1,6 +1,7 @@
 
 from db import db
 from datetime import datetime
+from sqlalchemy.dialects import postgresql
 
 
 class Merchant(db.Model):
@@ -37,6 +38,8 @@ class Post(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey(
         'merchant.id'), nullable=False)
     title = db.Column(db.Text, nullable=True)
+    items = db.Column(postgresql.ARRAY(db.Integer), nullable=True)
+    offer_id = db.Column(db.Integer, db.ForeignKey('offer.id'), nullable=True)
 
     def __repr__(self):
         return f"Post('{self.id}', '{self.media}',  '{self.date_posted}')"
@@ -85,5 +88,13 @@ class Item(db.Model):
     media_id = db.Column(db.Integer, db.ForeignKey('media.id'), nullable=False)
     merchant_id = db.Column(db.Integer, db.ForeignKey(
         'merchant.id'), nullable=False)
+    description = db.Column(db.Text, nullable=True)
     price = db.Column(db.Integer, nullable=False, default=0)
     currency = db.Column(db.Text, nullable=False)
+
+
+class Boost(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    end_time = db.Column(db.DateTime, nullable=False,
+                         default=datetime.utcnow)

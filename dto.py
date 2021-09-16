@@ -23,6 +23,7 @@ class UpdateMerchantSchema(Schema):
 class CreatePostRequestSchema(Schema):
     title = fields.Str()
     media_id = fields.Int()
+    items = fields.List(fields.Int())
 
 
 class CreatePostResponseSchema(Schema):
@@ -32,42 +33,12 @@ class CreatePostResponseSchema(Schema):
 class UpdatePostRequestSchema(Schema):
     title = fields.Str()
     media_id = fields.Int()
-
-
-class GetPostResponseSchema(Schema):
-    id = fields.Int()
-    media_url = fields.Str()
-    media_mimetype = fields.Str()
-    title = fields.Str()
-    date_posted = fields.Str()
-    logo_url = fields.Str()
-    logo_mimetype = fields.Str()
-    merchant_name = fields.Str()
-
-
-class ListPostResponsesSchema(Schema):
-    posts = fields.List(fields.Nested(GetPostResponseSchema))
+    items = fields.List(fields.Int())
 
 
 class UploadMediaResponseSchema(Schema):
     id = fields.Int()
-
-
-class GetDiscoverResponseSchema(Schema):
-    id = fields.Int()
-    merchant_name = fields.Str()
-    logo_url = fields.Str()
-    logo_mimetype = fields.Str()
-    title = fields.Str()
     media_url = fields.Str()
-    media_mimetype = fields.Str()
-    likes = fields.Int()
-    orders = fields.Int()
-    merchant_id = fields.Int()
-
-
-class ListDiscoverResponseSchema(Schema):
-    posts = fields.List(fields.Nested(GetDiscoverResponseSchema))
 
 
 class CreateUserSchema(Schema):
@@ -88,6 +59,7 @@ class CreateItemSchema(Schema):
     name = fields.Str()
     media_id = fields.Int()
     price = fields.Int()
+    description = fields.Str()
     currency = fields.Str()
 
 
@@ -100,6 +72,7 @@ class UpdateItemSchema(Schema):
     media_id = fields.Int()
     price = fields.Int()
     currency = fields.Str()
+    description = fields.Str()
 
 
 class GetItemResponseSchema(Schema):
@@ -109,7 +82,42 @@ class GetItemResponseSchema(Schema):
     media_mimetype = fields.Str()
     currency = fields.Str()
     price = fields.Int()
+    description = fields.Str()
 
 
 class ListMenuResponseSchema(Schema):
     items = fields.List(fields.Nested(GetItemResponseSchema))
+
+
+class GetPostResponseSchema(Schema):
+    id = fields.Int()
+    media_url = fields.Str()
+    media_mimetype = fields.Str()
+    title = fields.Str()
+    date_posted = fields.Str()
+    logo_url = fields.Str()
+    logo_mimetype = fields.Str()
+    merchant_name = fields.Str()
+    items = fields.List(fields.Nested(GetItemResponseSchema))
+
+
+class ListPostResponsesSchema(Schema):
+    posts = fields.List(fields.Nested(GetPostResponseSchema))
+
+
+class GetDiscoverResponseSchema(Schema):
+    id = fields.Int()
+    merchant_name = fields.Str()
+    logo_url = fields.Str()
+    logo_mimetype = fields.Str()
+    title = fields.Str()
+    media_url = fields.Str()
+    media_mimetype = fields.Str()
+    likes = fields.Int()
+    orders = fields.Int()
+    merchant_id = fields.Int()
+    items = fields.List(fields.Nested(GetItemResponseSchema))
+
+
+class ListDiscoverResponseSchema(Schema):
+    posts = fields.List(fields.Nested(GetDiscoverResponseSchema))
