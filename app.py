@@ -5,14 +5,17 @@ from apispec.ext.marshmallow import MarshmallowPlugin
 import os
 from db import db_init, db
 from werkzeug.utils import secure_filename
-from models import Merchant, Media, Post, User, Item
+from models import Merchant, Media, Post, User, Item, Boost
 import boto3
 from dto import *
 import uuid
 import datetime
+from flask_cors import CORS
 
 
 app = Flask(__name__, template_folder='swagger/templates')
+cors = CORS(app, resources={
+            "*": {"origins": "glacial-ocean-10172.herokuapp.com/*"}})
 
 
 db_url = os.getenv('DATABASE_URL')
@@ -416,8 +419,14 @@ def get_merchant_post(id, post_id):
     merchant = Merchant.query.get_or_404(post.user_id)
     logo = Media.query.get_or_404(merchant.logo_id)
     items = get_items(post.items)
+    currentTime = datetime.datetime.utcnow()
+    boost = Boost.query.filter(
+        Boost.end_time > currentTime).filter_by(post_id=post.id).first()
+    isBoosted = False
+    if boost is not None and boost.id > 0:
+        isBoosted = True
     return {'id': post.id, 'title': post.title, 'media_url': media.get_url(os.getenv('S3_BUCKET'), os.getenv('S3_REGION')), 'date_posted': post.date_posted.isoformat(), 'merchant_name': merchant.name, 'logo_url': logo.get_url(os.getenv(
-        'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype, 'items': items}, 200
+        'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype, 'items': items, 'is_boosted': isBoosted}, 200
 
 
 @app.route('/merchant/<int:id>/posts', methods=['GET'])
@@ -721,9 +730,8 @@ def get_menu(id):
                   schema:
                     type: integer
                   description: merchant id
-
             responses:
-                204:
+                200:
                     description: merchant menu
                     content:
                         application/json:
@@ -743,12 +751,50 @@ def get_menu(id):
     return {'items': response}, 200
 
 
-# @app.route('/post/<int:id>/boost', methods=['POST'])
-# def boost():
-#     if not request.is_json:
-#         return 'invalid request', 400
-#     req = request.get_json()
-#     days = req['days']
+@app.route('/post/<int:id>/boost', methods=['POST'])
+def boost_post(id):
+    """ Boost Post
+        ---
+        post:
+            summary: boost a post
+            description: boost a post
+            tags:
+                - Boost
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: integer
+                  description: post id
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: BoostRequestSchema
+            responses:
+                200:
+                    description: boost status
+                    content:
+                        application/json:
+                            schema: BoostResponseSchema
+
+                400:
+                    description: invalid request
+    """
+    if not request.is_json:
+        return 'invalid request', 400
+    req = request.get_json()
+    currentTime = datetime.datetime.utcnow()
+    endtime = currentTime + datetime.timedelta(days=req['days'])
+    existingBoost = Boost.query.filter(Boost.end_time > currentTime).all()
+    if existingBoost is not None and len(existingBoost) > 0:
+        return '', 400
+    Post.query.get_or_404(id)
+    boost = Boost(post_id=id, end_time=endtime)
+    db.session.add(boost)
+    db.session.commit()
+    return {'success': True}, 200
 
 
 @app.route('/user/<int:id>/post/<int:post_id>', methods=['POST'])
@@ -774,6 +820,7 @@ with app.test_request_context():
     spec.path(view=update_item)
     spec.path(view=get_item)
     spec.path(view=get_menu)
+    spec.path(view=boost_post)
 
 
 if __name__ == '__main__':

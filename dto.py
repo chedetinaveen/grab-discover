@@ -99,6 +99,7 @@ class GetPostResponseSchema(Schema):
     logo_mimetype = fields.Str()
     merchant_name = fields.Str()
     items = fields.List(fields.Nested(GetItemResponseSchema))
+    is_boosted = fields.Bool()
 
 
 class ListPostResponsesSchema(Schema):
@@ -121,3 +122,11 @@ class GetDiscoverResponseSchema(Schema):
 
 class ListDiscoverResponseSchema(Schema):
     posts = fields.List(fields.Nested(GetDiscoverResponseSchema))
+
+
+class BoostRequestSchema(Schema):
+    days = fields.Int()
+
+
+class BoostResponseSchema(Schema):
+    success = fields.Bool()
