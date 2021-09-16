@@ -473,12 +473,17 @@ def list_merchant_posts(id):
                - datetime.datetime(1970, 1, 1)).total_seconds(), reverse=True)
     logo = Media.query.get_or_404(merchant.logo_id)
     response = []
+    currentTime = datetime.datetime.utcnow()
     for post in posts:
         media = Media.query.get_or_404(post.media_id)
-
+        boost = Boost.query.filter(
+            Boost.end_time > currentTime).filter_by(post_id=post.id).first()
+        isBoosted = False
+        if boost is not None and boost.id > 0:
+            isBoosted = True
         response.append({'items': get_items(post.items), 'id': post.id, 'title': post.title, 'media_url': media.get_url(os.getenv(
             'S3_BUCKET'), os.getenv('S3_REGION')), 'date_posted': post.date_posted.isoformat(), 'merchant_name': merchant.name, 'logo_url': logo.get_url(os.getenv(
-                'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype})
+                'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype, 'is_boosted': isBoosted})
     return {'posts': response}, 200
 
 
@@ -507,14 +512,19 @@ def get_discover():
     posts.sort(key=lambda x: (x.date_posted
                - datetime.datetime(1970, 1, 1)).total_seconds(), reverse=True)
     response = []
+    currentTime = datetime.datetime.utcnow()
     for post in posts:
         media = Media.query.get_or_404(post.media_id)
         merchant = Merchant.query.get_or_404(post.user_id)
         logo = Media.query.get_or_404(merchant.logo_id)
-
+        boost = Boost.query.filter(
+            Boost.end_time > currentTime).filter_by(post_id=post.id).first()
+        isBoosted = False
+        if boost is not None and boost.id > 0:
+            isBoosted = True
         response.append({'items': get_items(post.items), 'id': post.id, 'title': post.title, 'media_url': media.get_url(os.getenv(
             'S3_BUCKET'), os.getenv('S3_REGION')), 'date_posted': post.date_posted.isoformat(), 'merchant_name': merchant.name, 'logo_url': logo.get_url(os.getenv(
-                'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype, 'merchant_id': merchant.id})
+                'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype, 'merchant_id': merchant.id, 'is_boosted': isBoosted})
     return {'posts': response}, 200
 
 

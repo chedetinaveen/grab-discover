@@ -114,6 +114,7 @@ class GetDiscoverResponseSchema(Schema):
     title = fields.Str()
     media_url = fields.Str()
     media_mimetype = fields.Str()
+    is_boosted = fields.Bool()
     likes = fields.Int()
     orders = fields.Int()
     merchant_id = fields.Int()
