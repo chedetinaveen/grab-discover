@@ -40,6 +40,8 @@ class Post(db.Model):
     title = db.Column(db.Text, nullable=True)
     items = db.Column(postgresql.ARRAY(db.Integer), nullable=True)
     offer_id = db.Column(db.Integer, db.ForeignKey('offer.id'), nullable=True)
+    likes = db.relationship('Like', backref='post', lazy='select')
+    comments = db.relationship('Comment', backref='post', lazy='select')
 
     def __repr__(self):
         return f"Post('{self.id}', '{self.media}',  '{self.date_posted}')"

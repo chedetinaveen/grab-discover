@@ -5,7 +5,7 @@ from apispec.ext.marshmallow import MarshmallowPlugin
 import os
 from db import db_init, db
 from werkzeug.utils import secure_filename
-from models import Merchant, Media, Post, User, Item, Boost
+from models import Merchant, Media, Post, User, Item, Boost, Like
 import boto3
 from dto import *
 import uuid
@@ -436,7 +436,7 @@ def get_merchant_post(id, post_id):
     if boost is not None and boost.id > 0:
         isBoosted = True
     return {'id': post.id, 'title': post.title, 'media_url': media.get_url(os.getenv('S3_BUCKET'), os.getenv('S3_REGION')), 'date_posted': post.date_posted.isoformat(), 'merchant_name': merchant.name, 'logo_url': logo.get_url(os.getenv(
-        'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype, 'items': items, 'is_boosted': isBoosted}, 200
+        'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype, 'items': items, 'is_boosted': isBoosted, 'likes': len(post.likes), 'comments': len(post.comments)}, 200
 
 
 @app.route('/merchant/<int:id>/posts', methods=['GET'])
@@ -483,13 +483,13 @@ def list_merchant_posts(id):
             isBoosted = True
         response.append({'items': get_items(post.items), 'id': post.id, 'title': post.title, 'media_url': media.get_url(os.getenv(
             'S3_BUCKET'), os.getenv('S3_REGION')), 'date_posted': post.date_posted.isoformat(), 'merchant_name': merchant.name, 'logo_url': logo.get_url(os.getenv(
-                'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype, 'is_boosted': isBoosted})
+                'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype, 'is_boosted': isBoosted, 'likes': len(post.likes), 'comments': len(post.comments)})
     return {'posts': response}, 200
 
 
-@app.route('/discover', methods=['GET'])
+@app.route('/user/<int:id>/discover', methods=['GET'])
 @cross_origin()
-def get_discover():
+def get_discover(id):
     """ Discover the feed
         ---
         get:
@@ -497,7 +497,13 @@ def get_discover():
             description: list all posts
             tags:
                 - Discover
-
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: integer
+                  description: user id
             responses:
                 200:
                     description: post details
@@ -508,6 +514,7 @@ def get_discover():
                 404:
                     description: post not found
     """
+    user = User.query.get_or_404(id)
     posts = Post.query.all()
     posts.sort(key=lambda x: (x.date_posted
                - datetime.datetime(1970, 1, 1)).total_seconds(), reverse=True)
@@ -522,9 +529,14 @@ def get_discover():
         isBoosted = False
         if boost is not None and boost.id > 0:
             isBoosted = True
+        isLiked = False
+        like = Like.query.filter_by(
+            post_id=post.id).filter_by(user_id=user.id).first()
+        if like is not None:
+            isLiked = True
         response.append({'items': get_items(post.items), 'id': post.id, 'title': post.title, 'media_url': media.get_url(os.getenv(
             'S3_BUCKET'), os.getenv('S3_REGION')), 'date_posted': post.date_posted.isoformat(), 'merchant_name': merchant.name, 'logo_url': logo.get_url(os.getenv(
-                'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype, 'merchant_id': merchant.id, 'is_boosted': isBoosted})
+                'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype, 'merchant_id': merchant.id, 'is_boosted': isBoosted, 'likes': len(post.likes), 'comments': len(post.comments), 'is_liked': isLiked})
     return {'posts': response}, 200
 
 
@@ -826,10 +838,53 @@ def boost_post(id):
     return {'success': True}, 200
 
 
-@app.route('/user/<int:id>/post/<int:post_id>', methods=['POST'])
+@app.route('/post/<int:id>/like', methods=['POST'])
 @cross_origin()
-def like(id, post_id):
-    return '', 204
+def update_like(id):
+    """ Update Like
+        ---
+        post:
+            summary: update like for post
+            description: update like statue of a post for a user
+            tags:
+                - Like
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: integer
+                  description: post id
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: UpdateLikeRequestSchema
+            responses:
+                200:
+                    description: total likes of a post
+                    content:
+                        application/json:
+                            schema: UpdateLikeResponseSchema
+
+                400:
+                    description: invalid request
+    """
+    if not request.is_json:
+        return 'invalid request', 400
+    req = request.get_json()
+    Post.query.get_or_404(id)
+    like = Like.query.filter_by(post_id=id).filter_by(
+        user_id=req['user_id']).first()
+    status = False
+    if like is not None:
+        db.session.delete(like)
+    else:
+        db.session.add(Like(user_id=req['user_id'], post_id=id))
+        status = True
+    db.session.commit()
+    total_likes = len(Like.query.filter_by(post_id=id).all())
+    return {'total_likes': total_likes, 'is_liked': status}, 200
 
 
 with app.test_request_context():
@@ -851,6 +906,7 @@ with app.test_request_context():
     spec.path(view=get_item)
     spec.path(view=get_menu)
     spec.path(view=boost_post)
+    spec.path(view=update_like)
 
 
 if __name__ == '__main__':

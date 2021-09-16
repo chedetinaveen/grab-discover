@@ -100,6 +100,8 @@ class GetPostResponseSchema(Schema):
     merchant_name = fields.Str()
     items = fields.List(fields.Nested(GetItemResponseSchema))
     is_boosted = fields.Bool()
+    likes = fields.Int()
+    comments = fields.Int()
 
 
 class ListPostResponsesSchema(Schema):
@@ -115,8 +117,10 @@ class GetDiscoverResponseSchema(Schema):
     media_url = fields.Str()
     media_mimetype = fields.Str()
     is_boosted = fields.Bool()
-    likes = fields.Int()
     orders = fields.Int()
+    likes = fields.Int()
+    comments = fields.Int()
+    is_liked = fields.Bool()
     merchant_id = fields.Int()
     items = fields.List(fields.Nested(GetItemResponseSchema))
 
@@ -131,3 +135,12 @@ class BoostRequestSchema(Schema):
 
 class BoostResponseSchema(Schema):
     success = fields.Bool()
+
+
+class UpdateLikeRequestSchema(Schema):
+    user_id = fields.Int()
+
+
+class UpdateLikeResponseSchema(Schema):
+    total_likes = fields.Int()
+    is_liked = fields.Bool()
