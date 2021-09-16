@@ -10,13 +10,12 @@ import boto3
 from dto import *
 import uuid
 import datetime
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 
 
 app = Flask(__name__, template_folder='swagger/templates')
-cors = CORS(app, resources={
-            "*": {"origins": "glacial-ocean-10172.herokuapp.com/*"}})
-
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 db_url = os.getenv('DATABASE_URL')
 if db_url.startswith("postgres://"):
@@ -31,6 +30,7 @@ db_init(app)
 
 
 @app.route('/media/upload', methods=['POST'])
+@cross_origin()
 def media_upload():
     """ Upload Media
         ---
@@ -86,6 +86,7 @@ spec = APISpec(
 @app.route("/")
 @app.route('/docs')
 @app.route('/docs/<path:path>')
+@cross_origin()
 def swagger_docs(path=None):
     if not path or path == 'index.html':
         return render_template('index.html', base_url='/docs', domain=os.getenv('SWAGGER_HOST'))
@@ -94,11 +95,13 @@ def swagger_docs(path=None):
 
 
 @app.route('/api/swagger.json')
+@cross_origin()
 def create_swagger_spec():
     return jsonify(spec.to_dict())
 
 
 @app.route('/merchant', methods=['POST'])
+@cross_origin()
 def create_merchant():
     """ Create a Merchant
         ---
@@ -134,6 +137,7 @@ def create_merchant():
 
 
 @app.route('/merchant/<int:id>', methods=['GET'])
+@cross_origin()
 def get_merchant(id):
     """ Get Merchant
         ---
@@ -168,6 +172,7 @@ def get_merchant(id):
 
 
 @app.route('/merchant/<int:id>', methods=['PUT'])
+@cross_origin()
 def update_merchant(id):
     """ Update Merchant
         ---
@@ -207,6 +212,7 @@ def update_merchant(id):
 
 
 @app.route('/merchant/<int:id>', methods=['DELETE'])
+@cross_origin()
 def delete_merchant(id):
     """ Delete Merchant
         ---
@@ -239,6 +245,7 @@ def delete_merchant(id):
 
 
 @app.route('/merchant/<int:id>/post', methods=['POST'])
+@cross_origin()
 def create_post(id):
     """ Create Post
         ---
@@ -283,6 +290,7 @@ def create_post(id):
 
 
 @app.route('/merchant/<int:id>/post/<int:post_id>', methods=['PUT'])
+@cross_origin()
 def update_post(id, post_id):
     """ Update Post
         ---
@@ -331,6 +339,7 @@ def update_post(id, post_id):
 
 
 @app.route('/merchant/<int:id>/post/<int:post_id>', methods=['DELETE'])
+@cross_origin()
 def delete_post(id, post_id):
     """ Delete Post
         ---
@@ -382,6 +391,7 @@ def get_items(items):
 
 
 @app.route('/merchant/<int:id>/post/<int:post_id>', methods=['GET'])
+@cross_origin()
 def get_merchant_post(id, post_id):
     """ Get Post Details
         ---
@@ -430,6 +440,7 @@ def get_merchant_post(id, post_id):
 
 
 @app.route('/merchant/<int:id>/posts', methods=['GET'])
+@cross_origin()
 def list_merchant_posts(id):
     """ List all Posts by merchant
         ---
@@ -472,6 +483,7 @@ def list_merchant_posts(id):
 
 
 @app.route('/discover', methods=['GET'])
+@cross_origin()
 def get_discover():
     """ Discover the feed
         ---
@@ -507,6 +519,7 @@ def get_discover():
 
 
 @app.route('/user', methods=['POST'])
+@cross_origin()
 def create_user():
     """ Create User
         ---
@@ -542,6 +555,7 @@ def create_user():
 
 
 @app.route('/user/<int:id>', methods=['PUT'])
+@cross_origin()
 def update_user(id):
     """ Update User
         ---
@@ -579,6 +593,7 @@ def update_user(id):
 
 
 @app.route('/merchant/<int:id>/item', methods=['POST'])
+@cross_origin()
 def create_item(id):
     """ Create Menu Item
         ---
@@ -623,6 +638,7 @@ def create_item(id):
 
 
 @app.route('/merchant/<int:id>/item/<int:item_id>', methods=['PUT'])
+@cross_origin()
 def update_item(id, item_id):
     """ Update Menu Item
         ---
@@ -676,6 +692,7 @@ def update_item(id, item_id):
 
 
 @app.route('/merchant/<int:id>/item/<int:item_id>', methods=['GET'])
+@cross_origin()
 def get_item(id, item_id):
     """ Get Menu Item
         ---
@@ -715,6 +732,7 @@ def get_item(id, item_id):
 
 
 @app.route('/merchant/<int:id>/menu', methods=['GET'])
+@cross_origin()
 def get_menu(id):
     """ Get Menu
         ---
@@ -752,6 +770,7 @@ def get_menu(id):
 
 
 @app.route('/post/<int:id>/boost', methods=['POST'])
+@cross_origin()
 def boost_post(id):
     """ Boost Post
         ---
@@ -798,6 +817,7 @@ def boost_post(id):
 
 
 @app.route('/user/<int:id>/post/<int:post_id>', methods=['POST'])
+@cross_origin()
 def like(id, post_id):
     return '', 204
 
