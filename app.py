@@ -588,7 +588,8 @@ def create_item(id):
         return 'Invalid Request', 400
     req = request.get_json()
     Merchant.query.get_or_404(id)
-    item = Item(name=req['name'], media_id=req['media_id'], merchant_id=id)
+    item = Item(name=req['name'], media_id=req['media_id'],
+                merchant_id=id, price=req['price'], currency=req['currency'])
     db.session.add(item)
     db.session.commit()
     return {'id': item.id}, 200
@@ -640,6 +641,8 @@ def update_item(id, item_id):
     item = Item.query.get_or_404(item_id)
     item.name = req['name']
     item.media_id = req['media_id']
+    item.price = req['price']
+    item.currency = req['currency']
     db.session.commit()
     return '', 204
 
@@ -680,7 +683,7 @@ def get_item(id, item_id):
     Merchant.query.get_or_404(id)
     item = Item.query.get_or_404(item_id)
     media = Media.query.get_or_404(item.media_id)
-    return {'id': item.id, 'name': item.name, 'media_mimetype': media.mimetype, 'media_url': media.get_url(os.getenv('S3_BUCKET'), os.getenv('S3_REGION'))}, 200
+    return {'id': item.id, 'name': item.name, 'media_mimetype': media.mimetype, 'media_url': media.get_url(os.getenv('S3_BUCKET'), os.getenv('S3_REGION')), 'price': item.price, 'currency': item.currency}, 200
 
 
 @app.route('/merchant/<int:id>/menu', methods=['GET'])
@@ -717,9 +720,16 @@ def get_menu(id):
     for item in items:
         media = Media.query.get_or_404(item.media_id)
         response.append({'id': item.id, 'name': item.name, 'media_mimetype': media.mimetype,
-                        'media_url': media.get_url(os.getenv('S3_BUCKET'), os.getenv('S3_REGION'))})
+                        'media_url': media.get_url(os.getenv('S3_BUCKET'), os.getenv('S3_REGION')), 'price': item.price, 'currency': item.currency})
     return {'items': response}, 200
 
+
+# @app.route('/boost', methods=['POST'])
+# def boost():
+#     if not request.is_json:
+#         return 'invalid request', 400
+#     req = request.get_json()
+#
 
 @app.route('/user/<int:id>/post/<int:post_id>', methods=['POST'])
 def like(id, post_id):

@@ -87,6 +87,8 @@ class UpdateUserSchema(Schema):
 class CreateItemSchema(Schema):
     name = fields.Str()
     media_id = fields.Int()
+    price = fields.Int()
+    currency = fields.Str()
 
 
 class CreateItemResponseSchema(Schema):
@@ -96,6 +98,8 @@ class CreateItemResponseSchema(Schema):
 class UpdateItemSchema(Schema):
     name = fields.Str()
     media_id = fields.Int()
+    price = fields.Int()
+    currency = fields.Str()
 
 
 class GetItemResponseSchema(Schema):
@@ -103,6 +107,8 @@ class GetItemResponseSchema(Schema):
     name = fields.Str()
     media_url = fields.Str()
     media_mimetype = fields.Str()
+    currency = fields.Str()
+    price = fields.Int()
 
 
 class ListMenuResponseSchema(Schema):

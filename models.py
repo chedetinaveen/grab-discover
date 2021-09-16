@@ -85,3 +85,5 @@ class Item(db.Model):
     media_id = db.Column(db.Integer, db.ForeignKey('media.id'), nullable=False)
     merchant_id = db.Column(db.Integer, db.ForeignKey(
         'merchant.id'), nullable=False)
+    price = db.Column(db.Integer, nullable=False, default=0)
+    currency = db.Column(db.Text, nullable=False)
