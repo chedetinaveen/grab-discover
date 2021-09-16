@@ -63,6 +63,7 @@ class GetDiscoverResponseSchema(Schema):
     media_mimetype = fields.Str()
     likes = fields.Int()
     orders = fields.Int()
+    merchant_id = fields.Int()
 
 
 class ListDiscoverResponseSchema(Schema):
@@ -81,3 +82,28 @@ class CreateUserResponseSchema(Schema):
 class UpdateUserSchema(Schema):
     name = fields.Str()
     profile_id = fields.Str()
+
+
+class CreateItemSchema(Schema):
+    name = fields.Str()
+    media_id = fields.Int()
+
+
+class CreateItemResponseSchema(Schema):
+    id = fields.Int()
+
+
+class UpdateItemSchema(Schema):
+    name = fields.Str()
+    media_id = fields.Int()
+
+
+class GetItemResponseSchema(Schema):
+    id = fields.Int()
+    name = fields.Str()
+    media_url = fields.Str()
+    media_mimetype = fields.Str()
+
+
+class ListMenuResponseSchema(Schema):
+    items = fields.List(fields.Nested(GetItemResponseSchema))

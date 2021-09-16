@@ -5,7 +5,7 @@ from apispec.ext.marshmallow import MarshmallowPlugin
 import os
 from db import db_init, db
 from werkzeug.utils import secure_filename
-from models import Merchant, Media, Post, User
+from models import Merchant, Media, Post, User, Item
 import boto3
 from dto import *
 import uuid
@@ -475,7 +475,7 @@ def get_discover():
         logo = Media.query.get_or_404(merchant.logo_id)
         response.append({'id': post.id, 'title': post.title, 'media_url': media.get_url(os.getenv(
             'S3_BUCKET'), os.getenv('S3_REGION')), 'date_posted': post.date_posted.isoformat(), 'merchant_name': merchant.name, 'logo_url': logo.get_url(os.getenv(
-                'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype})
+                'S3_BUCKET'), os.getenv('S3_REGION')), 'logo_mimetype': logo.mimetype, 'media_mimetype': media.mimetype, 'merchant_id': merchant.id})
     return {'posts': response}, 200
 
 
@@ -551,6 +551,176 @@ def update_user(id):
     return '', 204
 
 
+@app.route('/merchant/<int:id>/item', methods=['POST'])
+def create_item(id):
+    """ Create Menu Item
+        ---
+        post:
+            summary: create menu item
+            description: create menu item
+            tags:
+                - Menu
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: integer
+                  description: merchant id
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: CreateItemSchema
+
+
+            responses:
+                200:
+                    description: item created
+                    content:
+                        application/json:
+                            schema: CreateItemResponseSchema
+
+                400:
+                    description: invalid request
+    """
+    if not request.is_json:
+        return 'Invalid Request', 400
+    req = request.get_json()
+    Merchant.query.get_or_404(id)
+    item = Item(name=req['name'], media_id=req['media_id'], merchant_id=id)
+    db.session.add(item)
+    db.session.commit()
+    return {'id': item.id}, 200
+
+
+@app.route('/merchant/<int:id>/item/<int:item_id>', methods=['PUT'])
+def update_item(id, item_id):
+    """ Update Menu Item
+        ---
+        put:
+            summary: update menu item
+            description: update menu item
+            tags:
+                - Menu
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: integer
+                  description: merchant id
+                - in: path
+                  name: item_id
+                  required: true
+                  schema:
+                    type: integer
+                  description: item id to be updated
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: UpdateItemSchema
+
+
+            responses:
+                204:
+                    description: item updated
+
+                400:
+                    description: invalid request
+
+                404:
+                    description: item not found
+    """
+    if not request.is_json:
+        return 'Invalid Request', 400
+    req = request.get_json()
+    Merchant.query.get_or_404(id)
+    item = Item.query.get_or_404(item_id)
+    item.name = req['name']
+    item.media_id = req['media_id']
+    db.session.commit()
+    return '', 204
+
+
+@app.route('/merchant/<int:id>/item/<int:item_id>', methods=['GET'])
+def get_item(id, item_id):
+    """ Get Menu Item
+        ---
+        get:
+            summary: get menu item
+            description: get menu item
+            tags:
+                - Menu
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: integer
+                  description: merchant id
+                - in: path
+                  name: item_id
+                  required: true
+                  schema:
+                    type: integer
+                  description: item id
+
+            responses:
+                204:
+                    description: item updated
+                    content:
+                        application/json:
+                            schema: GetItemResponseSchema
+
+                404:
+                    description: item not found
+    """
+    Merchant.query.get_or_404(id)
+    item = Item.query.get_or_404(item_id)
+    media = Media.query.get_or_404(item.media_id)
+    return {'id': item.id, 'name': item.name, 'media_mimetype': media.mimetype, 'media_url': media.get_url(os.getenv('S3_BUCKET'), os.getenv('S3_REGION'))}, 200
+
+
+@app.route('/merchant/<int:id>/menu', methods=['GET'])
+def get_menu(id):
+    """ Get Menu
+        ---
+        get:
+            summary: get menu
+            description: get menu
+            tags:
+                - Menu
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: integer
+                  description: merchant id
+
+            responses:
+                204:
+                    description: merchant menu
+                    content:
+                        application/json:
+                            schema: ListMenuResponseSchema
+
+                400:
+                    description: invalid request
+    """
+    Merchant.query.get_or_404(id)
+    items = Item.query.filter_by(merchant_id=id).all()
+    items.sort(key=lambda x: x.name)
+    response = []
+    for item in items:
+        media = Media.query.get_or_404(item.media_id)
+        response.append({'id': item.id, 'name': item.name, 'media_mimetype': media.mimetype,
+                        'media_url': media.get_url(os.getenv('S3_BUCKET'), os.getenv('S3_REGION'))})
+    return {'items': response}, 200
+
+
 @app.route('/user/<int:id>/post/<int:post_id>', methods=['POST'])
 def like(id, post_id):
     return '', 204
@@ -570,6 +740,10 @@ with app.test_request_context():
     spec.path(view=get_discover)
     spec.path(view=create_user)
     spec.path(view=update_user)
+    spec.path(view=create_item)
+    spec.path(view=update_item)
+    spec.path(view=get_item)
+    spec.path(view=get_menu)
 
 
 if __name__ == '__main__':

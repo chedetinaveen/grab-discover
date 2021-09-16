@@ -62,3 +62,26 @@ class Comment(db.Model):
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
     date_posted = db.Column(db.DateTime, nullable=False,
                             default=datetime.utcnow)
+
+
+class Offer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey(
+        'merchant.id'), nullable=False)
+    name = db.Column(db.Text, nullable=False)
+    type = db.Column(db.Integer, nullable=False)
+    fixed_amount = db.Column(db.Integer, nullable=True, default=0)
+    percentage = db.Column(db.Integer, nullable=True, default=0)
+    currency = db.Column(db.Text, nullable=False)
+    start_date = db.Column(db.DateTime, nullable=False,
+                           default=datetime.utcnow)
+    end_date = db.Column(db.DateTime, nullable=False,
+                         default=datetime.utcnow)
+
+
+class Item(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.Text, nullable=False)
+    media_id = db.Column(db.Integer, db.ForeignKey('media.id'), nullable=False)
+    merchant_id = db.Column(db.Integer, db.ForeignKey(
+        'merchant.id'), nullable=False)
