@@ -52,7 +52,7 @@ class CreateUserResponseSchema(Schema):
 
 class UpdateUserSchema(Schema):
     name = fields.Str()
-    profile_id = fields.Str()
+    profile_id = fields.Int()
 
 
 class CreateItemSchema(Schema):
