@@ -67,6 +67,7 @@ class Comment(db.Model):
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
     date_posted = db.Column(db.DateTime, nullable=False,
                             default=datetime.utcnow)
+    content = db.Column(db.Text, nullable=False)
 
 
 class Offer(db.Model):

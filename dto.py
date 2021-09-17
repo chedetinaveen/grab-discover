@@ -144,3 +144,21 @@ class UpdateLikeRequestSchema(Schema):
 class UpdateLikeResponseSchema(Schema):
     total_likes = fields.Int()
     is_liked = fields.Bool()
+
+
+class CommentRequestSchema(Schema):
+    user_id = fields.Int()
+    content = fields.Str()
+
+
+class GetCommentsResponseSchema(Schema):
+    id = fields.Int()
+    user_name = fields.Str()
+    profile_url = fields.Str()
+    profile_mimetype = fields.Str()
+    content = fields.Str()
+    date_posted = fields.Str()
+
+
+class ListCommentsResponseSchema(Schema):
+    comments = fields.List(fields.Nested(GetCommentsResponseSchema))

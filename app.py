@@ -5,7 +5,7 @@ from apispec.ext.marshmallow import MarshmallowPlugin
 import os
 from db import db_init, db
 from werkzeug.utils import secure_filename
-from models import Merchant, Media, Post, User, Item, Boost, Like
+from models import Merchant, Media, Post, User, Item, Boost, Like, Comment
 import boto3
 from dto import *
 import uuid
@@ -828,7 +828,8 @@ def boost_post(id):
     req = request.get_json()
     currentTime = datetime.datetime.utcnow()
     endtime = currentTime + datetime.timedelta(days=req['days'])
-    existingBoost = Boost.query.filter(Boost.end_time > currentTime).all()
+    existingBoost = Boost.query.filter(
+        Boost.end_time > currentTime).filter_by(post_id=id).all()
     if existingBoost is not None and len(existingBoost) > 0:
         return '', 400
     Post.query.get_or_404(id)
@@ -887,6 +888,86 @@ def update_like(id):
     return {'total_likes': total_likes, 'is_liked': status}, 200
 
 
+@app.route('/post/<int:id>/comment', methods=['POST'])
+@cross_origin()
+def add_comment(id):
+    """ Add Comment to a post
+        ---
+        post:
+            summary: add comment to a post
+            description: add comment to a post
+            tags:
+                - Comment
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: integer
+                  description: post id
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: CommentRequestSchema
+            responses:
+                204:
+                    description: comment added
+
+                400:
+                    description: invalid request
+    """
+    if not request.is_json:
+        return 'invalid request', 400
+    req = request.get_json()
+    Post.query.get_or_404(id)
+    user = User.query.get_or_404(req['user_id'])
+    c = Comment(user_id=user.id, post_id=id, content=req['content'])
+    db.session.add(c)
+    db.session.commit()
+    return '', 204
+
+
+@app.route('/post/<int:id>/comment', methods=['GET'])
+@cross_origin()
+def list_comments(id):
+    """ List Comments of a post
+        ---
+        get:
+            summary: list all comments of a post
+            description: list all comments to a post
+            tags:
+                - Comment
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: integer
+                  description: post id
+
+            responses:
+                200:
+                    description: boost status
+                    content:
+                        application/json:
+                            schema: ListCommentsResponseSchema
+
+                400:
+                    description: invalid request
+    """
+    Post.query.get_or_404(id)
+    c = Comment.query.filter_by(post_id=id).all()
+    c.sort(key=lambda x: x.date_posted)
+    comments = []
+    for comment in c:
+        user = User.query.get_or_404(comment.user_id)
+        media = Media.query.get_or_404(user.media_id)
+        comments.append({'id': comment.id, 'user_name': user.name, 'profile_url': media.get_url(os.getenv(
+            'S3_BUCKET'), os.getenv('S3_REGION')), 'profile_mimetype': media.mimetype, 'content': comment.content, 'date_posted': comment.date_posted.isoformat()})
+    return {'comments': comments}, 200
+
+
 with app.test_request_context():
     spec.path(view=create_merchant)
     spec.path(view=get_merchant)
@@ -907,6 +988,8 @@ with app.test_request_context():
     spec.path(view=get_menu)
     spec.path(view=boost_post)
     spec.path(view=update_like)
+    spec.path(view=add_comment)
+    spec.path(view=list_comments)
 
 
 if __name__ == '__main__':
